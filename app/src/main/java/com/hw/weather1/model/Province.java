@@ -5,16 +5,16 @@ package com.hw.weather1.model;
  */
 public class Province {
     private String ProvinceName;
-    private int ProvinceId;
+    private String ProvinceCode;
 
     public Province() {
 
     }
 
-    public Province(final String name, final int id) {
-        if(null != name && 0 <= id) {
+    public Province(final String name, final String code) {
+        if(null != name && 0 <= code.length()) {
             ProvinceName = name;
-            ProvinceId = id;
+            ProvinceCode = code;
         }
     }
 
@@ -22,8 +22,8 @@ public class Province {
         return ProvinceName;
     }
 
-    public int GetProvinceId() {
-        return ProvinceId;
+    public String GetProvinceCode() {
+        return ProvinceCode;
     }
 
     public boolean SetProvinceName(final String name) {
@@ -34,8 +34,8 @@ public class Province {
         return false;
     }
 
-    public boolean SetProvinceId(final int id) {
-        ProvinceId = id;
+    public boolean SetProvinceCode(final String code) {
+        ProvinceCode = code;
         return true;
     }
 }

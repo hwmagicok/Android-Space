@@ -5,18 +5,18 @@ package com.hw.weather1.model;
  */
 public class City {
     private String CityName;
-    private int CityId;
-    private int belongProvinceId;
+    private String CityCode;
+    private String belongProvinceCode;
 
     public City() {
 
     }
 
-    public City(final String name, final int id, final int provinceId) {
-        if(null != name && 0 <= id && 0 <= provinceId){
+    public City(final String name, final String code, final String provinceCode) {
+        if(null != name && null != code && null != provinceCode){
             CityName = name;
-            CityId = id;
-            belongProvinceId = provinceId;
+            CityCode = code;
+            belongProvinceCode = provinceCode;
         }
     }
 
@@ -24,27 +24,35 @@ public class City {
         return CityName;
     }
 
-    public int GetCityId() {
-        return CityId;
+    public String GetCityCode() {
+        return CityCode;
     }
 
-    public int GetBelongProvinceId() {
-        return belongProvinceId;
+    public String GetBelongProvinceCode() {
+        return belongProvinceCode;
     }
 
     public boolean SetCityName(final String name){
-        if(null != name){
+        if(null != name && 0 < name.length()){
             CityName = name;
             return true;
         }
         return false;
     }
 
-    public void SetCityId(final int id) {
-        CityId = id;
+    public boolean SetCityCode(final String code) {
+        if(null != code && 0 < code.length()) {
+            CityCode = code;
+            return true;
+        }
+        return false;
     }
 
-    public void SetBelongProvinceId(final int id) {
-        belongProvinceId = id;
+    public boolean SetBelongProvinceCode(final String code) {
+        if(null != code && 0 < code.length()) {
+            belongProvinceCode = code;
+            return true;
+        }
+        return false;
     }
 }

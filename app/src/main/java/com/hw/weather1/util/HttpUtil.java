@@ -10,6 +10,7 @@ import java.net.URL;
 
 /**
  * Created by hw on 2016/2/16.
+ * 暂时用心知天气api
  */
 public class HttpUtil {
     public static void sendHttpRequest(final String address) {
@@ -26,20 +27,17 @@ public class HttpUtil {
                         connection.setReadTimeout(15000);
                         connection.setConnectTimeout(15000);
 
-                        Log.e("sendHttpRequest", "open connection");
-
                         InputStream in = connection.getInputStream();
                         BufferedReader reader = new BufferedReader(new InputStreamReader(in, "UTF-8"));
-                        Log.e("sendHttpRequest","stream reader");
+
                         StringBuffer response = new StringBuffer();
-                        String line = new String();
+                        String line;
 
                         int i = 0;
                         while((line = reader.readLine()) != null) {
                             response.append(line);
                         }
-                        Log.e("sendHttpRequest", response.toString());
-                        Log.e("sendHttpRequest","out");
+
                     }catch (Exception e) {
                         Log.e("HttpUtil", "error");
                         e.printStackTrace();
