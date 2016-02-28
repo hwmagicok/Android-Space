@@ -1,6 +1,7 @@
 package com.hw.weather1.activity;
 
 import android.app.Activity;
+import android.content.Context;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.util.Log;
@@ -18,6 +19,7 @@ import com.hw.weather1.util.HttpUtil;
 import com.hw.weather1.util.LocalUtil;
 import com.hw.weather1.util.Util;
 
+import java.io.File;
 import java.util.ArrayList;
 
 /**
@@ -35,6 +37,10 @@ public class SelectCityActivity extends Activity{
     private ListView list;
     private TextView leveltext;
 
+    private String curProvince = null;
+    private String curCity = null;
+    private String curCountry = null;
+
     WeatherDataDB db;
     Cursor cursor = null;
 
@@ -42,6 +48,12 @@ public class SelectCityActivity extends Activity{
         super.onCreate(savedInstanceState);
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.response);
+
+        //查看数据库是否存在，如果存在就删了它
+        final File databaseFile = this.getDatabasePath("hw_weatherDB");
+        if(databaseFile.exists()) {
+            databaseFile.delete();
+        }
 
         db = WeatherDataDB.getDbInstance(this);
         locationList = new ArrayList<String>();
@@ -61,14 +73,17 @@ public class SelectCityActivity extends Activity{
                 if (PROVINCE_LEVEL == currentlevel) {
                     currentlevel = CITY_LEVEL;
                     leveltext.setText("市");
-                    loadAllCity(locationList.get(position));
+                    curProvince = locationList.get(position);
+                    loadAllCity(curProvince);
                 } else if (CITY_LEVEL == currentlevel) {
                     currentlevel = COUNTRY_LEVEL;
                     leveltext.setText("县");
-                    loadAllCountry(locationList.get(position));
+                    curCity = locationList.get(position);
+                    loadAllCountry(curCity);
                 } else if (COUNTRY_LEVEL == currentlevel) {
                     currentlevel = WEATHER_LEVEL;
                     leveltext.setText("天气");
+                    curCountry = locationList.get(position);
                     queryCountryWeather();
                 }
             }
@@ -137,5 +152,20 @@ public class SelectCityActivity extends Activity{
 
     private void queryCountryWeather() {
         Log.e("SelectCityActivity", "queryCountryWeather succees");
+    }
+
+    public void onBackPressed() {
+        if(PROVINCE_LEVEL == currentlevel) {
+            finish();
+        }else if(CITY_LEVEL == currentlevel) {
+            currentlevel = PROVINCE_LEVEL;
+            loadAllProvince();
+        }else if(COUNTRY_LEVEL == currentlevel) {
+            currentlevel = CITY_LEVEL;
+            loadAllCity(curProvince);
+        }else if(WEATHER_LEVEL == currentlevel) {
+            currentlevel = COUNTRY_LEVEL;
+            loadAllCountry(curCity);
+        }
     }
 }
