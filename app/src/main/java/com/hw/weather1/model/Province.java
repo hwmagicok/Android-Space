@@ -6,15 +6,17 @@ package com.hw.weather1.model;
 public class Province {
     private String ProvinceName;
     private String ProvinceCode;
+    private String ProvinceEn;
 
     public Province() {
 
     }
 
-    public Province(final String name, final String code) {
-        if(null != name && 0 <= code.length()) {
+    public Province(final String name, final String code, final String en) {
+        if(null != name && 0 <= en.length()) {
             ProvinceName = name;
             ProvinceCode = code;
+            ProvinceEn = en;
         }
     }
 
@@ -24,6 +26,10 @@ public class Province {
 
     public String GetProvinceCode() {
         return ProvinceCode;
+    }
+
+    public String GetProvinceEn() {
+        return ProvinceEn;
     }
 
     public boolean SetProvinceName(final String name) {
@@ -37,5 +43,13 @@ public class Province {
     public boolean SetProvinceCode(final String code) {
         ProvinceCode = code;
         return true;
+    }
+
+    public boolean SetProvinceEn(final String en) {
+        if(null != en) {
+            ProvinceEn = en;
+            return true;
+        }
+        return false;
     }
 }

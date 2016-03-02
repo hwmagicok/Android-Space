@@ -59,16 +59,20 @@ public class LocalUtil {
 
             for(int i = 0 ; i < ChinaJsonArr.length(); i++) {
                 provinceJson = ChinaJsonArr.getJSONObject(i);
-                province.SetProvinceCode(provinceJson.getString("id"));
+                //province.SetProvinceCode(provinceJson.getString("id"));
+                province.SetProvinceCode(null);
                 province.SetProvinceName(provinceJson.getString("name"));
+                province.SetProvinceEn(provinceJson.getString("en"));
 
                 db.saveProvince(province);
                 cityJsonList = provinceJson.getJSONArray("list");
                 for(int j = 0; j < cityJsonList.length(); j++) {
                     cityJson = cityJsonList.getJSONObject(j);
-                    city.SetCityCode(cityJson.getString("id"));
+                    //city.SetCityCode(cityJson.getString("id"));
+                    city.SetCityCode(null);
                     city.SetCityName(cityJson.getString("name"));
-                    city.SetBelongProvinceCode(provinceJson.getString("id"));
+                    city.SetCityEn(cityJson.getString("en"));
+                    city.SetBelongProvinceEn(provinceJson.getString("en"));
 
                     db.saveCity(city);
                     countryJsonList = cityJson.getJSONArray("list");
@@ -77,7 +81,8 @@ public class LocalUtil {
                         countryJson = countryJsonList.getJSONObject(k);
                         country.SetCountryCode(countryJson.getString("id"));
                         country.SetCountryName(countryJson.getString("name"));
-                        country.SetBelongCityCode(cityJson.getString("id"));
+                        country.SetCountryEn(countryJson.getString("en"));
+                        country.SetBelongCityEn(cityJson.getString("en"));
 
                         db.saveCountry(country);
                         countryJson = null;

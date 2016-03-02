@@ -6,17 +6,19 @@ package com.hw.weather1.model;
 public class City {
     private String CityName;
     private String CityCode;
-    private String belongProvinceCode;
-
+    private String CityEn;
+    private String belongProvinceEn;
+    
     public City() {
 
     }
 
-    public City(final String name, final String code, final String provinceCode) {
-        if(null != name && null != code && null != provinceCode){
+    public City(final String name, final String code, final String en, final String provinceEn) {
+        if(null != name && null != code && null != provinceEn){
             CityName = name;
             CityCode = code;
-            belongProvinceCode = provinceCode;
+            CityEn = en;
+            belongProvinceEn = provinceEn;
         }
     }
 
@@ -28,8 +30,12 @@ public class City {
         return CityCode;
     }
 
-    public String GetBelongProvinceCode() {
-        return belongProvinceCode;
+    public String GetCityEn() {
+        return CityEn;
+    }
+
+    public String GetBelongProvinceEn() {
+        return belongProvinceEn;
     }
 
     public boolean SetCityName(final String name){
@@ -41,16 +47,21 @@ public class City {
     }
 
     public boolean SetCityCode(final String code) {
-        if(null != code && 0 < code.length()) {
-            CityCode = code;
+        CityCode = code;
+        return true;
+    }
+
+    public boolean SetCityEn(final String en) {
+        if(null != en && 0 < en.length()) {
+            CityEn = en;
             return true;
         }
         return false;
     }
 
-    public boolean SetBelongProvinceCode(final String code) {
-        if(null != code && 0 < code.length()) {
-            belongProvinceCode = code;
+    public boolean SetBelongProvinceEn(final String en) {
+        if(null != en && 0 < en.length()) {
+            belongProvinceEn = en;
             return true;
         }
         return false;

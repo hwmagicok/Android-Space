@@ -21,6 +21,7 @@ import com.hw.weather1.util.Util;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Iterator;
 
 /**
  * Created by hw on 2016/2/16.
@@ -30,7 +31,7 @@ public class SelectCityActivity extends Activity{
     public static final int CITY_LEVEL = 1;
     public static final int COUNTRY_LEVEL = 2;
     public static final int WEATHER_LEVEL = 3;
-    private int currentlevel;
+    private int currentlevel = PROVINCE_LEVEL;
 
     private ArrayAdapter<String> listAdapter;
     private ArrayList<String> locationList;
@@ -43,6 +44,10 @@ public class SelectCityActivity extends Activity{
 
     WeatherDataDB db;
     Cursor cursor = null;
+
+    //给直辖市和特别行政区留的，他们只有两个层级，市和区
+    private ArrayList<String> specialLocation;
+    private int specialLocationFlag = 0;
 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -64,27 +69,39 @@ public class SelectCityActivity extends Activity{
         //HttpUtil.sendHttpRequest(address);
         leveltext = (TextView) findViewById(R.id.level);
         LocalUtil.LoadAllLocation(this);
+
+        specialLocation = db.querySpecialProvince();
         loadAllProvince();
-        leveltext.setText("省");
+        setTitleText();
         list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 
+                //当发现所点击的那项属于特别地址，将直接把当前级别改为city,同时
+                //将特殊地址的标记置为1
+                if(!specialLocation.isEmpty()) {
+                    if(specialLocation.contains(locationList.get(position))) {
+                        currentlevel = CITY_LEVEL;
+                        specialLocationFlag = 1;
+                    }
+                }
+
                 if (PROVINCE_LEVEL == currentlevel) {
                     currentlevel = CITY_LEVEL;
-                    leveltext.setText("市");
                     curProvince = locationList.get(position);
                     loadAllCity(curProvince);
+                    setTitleText(curProvince);
                 } else if (CITY_LEVEL == currentlevel) {
                     currentlevel = COUNTRY_LEVEL;
-                    leveltext.setText("县");
                     curCity = locationList.get(position);
                     loadAllCountry(curCity);
+                    setTitleText(curCity);
                 } else if (COUNTRY_LEVEL == currentlevel) {
                     currentlevel = WEATHER_LEVEL;
-                    leveltext.setText("天气");
                     curCountry = locationList.get(position);
                     queryCountryWeather();
+                    loadAllCountry(curCountry);
+                    setTitleText(curCountry);
                 }
             }
         });
@@ -94,14 +111,27 @@ public class SelectCityActivity extends Activity{
     }
 
     private void loadAllProvince() {
+        if(0 != locationList.size()) {
+            locationList.clear();
+        }
+
+        //直接把特殊地址作为省载入省列表
+        ArrayList<String> specialProvinceList = db.querySpecialProvince();
+        if(!specialProvinceList.isEmpty()) {
+            for(String tmpString : specialProvinceList) {
+                locationList.add(tmpString);
+            }
+        }
+
         cursor = db.queryProvince();
+        String provinceName;
         if(null != cursor) {
             if(cursor.moveToFirst()) {
-                if(0 != locationList.size()) {
-                    locationList.clear();
-                }
                 do {
-                    locationList.add(cursor.getString(cursor.getColumnIndex("province_name")));
+                    provinceName = cursor.getString(cursor.getColumnIndex("province_name"));
+                    if(!provinceName.equals("直辖市") && !provinceName.equals("特别行政区")) {
+                        locationList.add(provinceName);
+                    }
                 }while(cursor.moveToNext());
                 listAdapter.notifyDataSetChanged();
                 list.setSelection(0);
@@ -133,14 +163,14 @@ public class SelectCityActivity extends Activity{
 
     private void loadAllCountry(String cityName) {
         cursor = db.queryCountry(cityName);
-        if(null != cursor) {
-            if(cursor.moveToFirst()) {
-                if(0 != locationList.size()) {
+        if (null != cursor) {
+            if (cursor.moveToFirst()) {
+                if (0 != locationList.size()) {
                     locationList.clear();
                 }
                 do {
                     locationList.add(cursor.getString(cursor.getColumnIndex("country_name")));
-                }while(cursor.moveToNext());
+                } while (cursor.moveToNext());
                 listAdapter.notifyDataSetChanged();
                 list.setSelection(0);
                 return;
@@ -151,7 +181,7 @@ public class SelectCityActivity extends Activity{
     }
 
     private void queryCountryWeather() {
-        Log.e("SelectCityActivity", "queryCountryWeather succees");
+        Log.e("SelectCityActivity", "queryCountryWeather success");
     }
 
     public void onBackPressed() {
@@ -159,13 +189,50 @@ public class SelectCityActivity extends Activity{
             finish();
         }else if(CITY_LEVEL == currentlevel) {
             currentlevel = PROVINCE_LEVEL;
+            setTitleText();
             loadAllProvince();
         }else if(COUNTRY_LEVEL == currentlevel) {
-            currentlevel = CITY_LEVEL;
-            loadAllCity(curProvince);
+            if(1 == specialLocationFlag) {
+                currentlevel = PROVINCE_LEVEL;
+                specialLocationFlag = 0;
+                loadAllProvince();
+                setTitleText();
+            }else {
+                currentlevel = CITY_LEVEL;
+                loadAllCity(curProvince);
+                setTitleText(curProvince);
+            }
         }else if(WEATHER_LEVEL == currentlevel) {
             currentlevel = COUNTRY_LEVEL;
             loadAllCountry(curCity);
+            setTitleText(curCity);
+        }
+    }
+
+    public void setTitleText() {
+        if(currentlevel == PROVINCE_LEVEL) {
+            leveltext.setText("中国");
+        }
+    }
+
+    public void setTitleText(final String name) {
+        switch (currentlevel) {
+            case PROVINCE_LEVEL :
+                leveltext.setText("中国");
+                break;
+            case CITY_LEVEL:
+                leveltext.setText(name + "省");
+                break;
+            case COUNTRY_LEVEL:
+                leveltext.setText(name + "市");
+                break;
+            case WEATHER_LEVEL:
+                if(1 == specialLocationFlag) {
+                    leveltext.setText(name + "区天气情况");
+                }else {
+                    leveltext.setText(name + "县天气情况");
+                }
+                break;
         }
     }
 }
