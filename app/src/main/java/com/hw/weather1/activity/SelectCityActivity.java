@@ -2,36 +2,49 @@ package com.hw.weather1.activity;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.os.Bundle;
+import android.os.Message;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
-import android.widget.Adapter;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
 import com.hw.weather1.R;
 import com.hw.weather1.model.WeatherDataDB;
+import com.hw.weather1.util.HttpCallbackListener;
 import com.hw.weather1.util.HttpUtil;
 import com.hw.weather1.util.LocalUtil;
-import com.hw.weather1.util.Util;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Iterator;
+import android.os.Handler;
+import java.util.logging.LogRecord;
 
 /**
  * Created by hw on 2016/2/16.
  */
 public class SelectCityActivity extends Activity{
+    public static final int MSGFROMCHILDTHREAD = 0;
     public static final int PROVINCE_LEVEL = 0;
     public static final int CITY_LEVEL = 1;
     public static final int COUNTRY_LEVEL = 2;
     public static final int WEATHER_LEVEL = 3;
     private int currentlevel = PROVINCE_LEVEL;
+
+    public static final String HEAD_SEARCH_LOCATION = "https://api.thinkpage.cn/v3/location/search.json?key=";
+    public static final String HEAD_SEARCH_WEATHER = "https://api.thinkpage.cn/v3/weather/now.json?key=";
+    public static final String TAIL_SEARCH_WEATHER = "&language=zh-Hans&unit=c";
+    private static final String MY_API_KEY = "NFBQRECLEA";
 
     private ArrayAdapter<String> listAdapter;
     private ArrayList<String> locationList;
@@ -48,6 +61,7 @@ public class SelectCityActivity extends Activity{
     //给直辖市和特别行政区留的，他们只有两个层级，市和区
     private ArrayList<String> specialLocation;
     private int specialLocationFlag = 0;
+
 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -79,8 +93,8 @@ public class SelectCityActivity extends Activity{
 
                 //当发现所点击的那项属于特别地址，将直接把当前级别改为city,同时
                 //将特殊地址的标记置为1
-                if(!specialLocation.isEmpty()) {
-                    if(specialLocation.contains(locationList.get(position))) {
+                if (!specialLocation.isEmpty()) {
+                    if (specialLocation.contains(locationList.get(position))) {
                         currentlevel = CITY_LEVEL;
                         specialLocationFlag = 1;
                     }
@@ -99,8 +113,39 @@ public class SelectCityActivity extends Activity{
                 } else if (COUNTRY_LEVEL == currentlevel) {
                     currentlevel = WEATHER_LEVEL;
                     curCountry = locationList.get(position);
-                    queryCountryWeather();
-                    loadAllCountry(curCountry);
+
+                    /*
+                    String countryCode = LocalUtil.GetCountryCode(SelectCityActivity.this, curCountry,
+                            HEAD_SEARCH_LOCATION + MY_API_KEY + "&q=" + curCity + curCountry, callbackListener);
+                    queryCountryWeather(HEAD_SEARCH_WEATHER + MY_API_KEY + "&location=" +
+                            countryCode + TAIL_SEARCH_WEATHER);
+                    */
+                    //中文编码转换
+                    try {
+                        String curCity_curCountry = java.net.URLEncoder.encode(curCity + curCountry, "UTF-8");
+                        HttpUtil.sendHttpRequest(HEAD_SEARCH_LOCATION + MY_API_KEY + "&q=" + curCity_curCountry,
+                                new HttpCallbackListener() {
+                                    @Override
+                                    public void onFinish(String result) {
+                                        try {
+                                            JSONObject JsonResult = new JSONObject(result);
+                                            JSONArray JsonResults = JsonResult.getJSONArray("results");
+                                            JSONObject JsonLocationInfo = JsonResults.getJSONObject(0);
+                                            String CountryCode = JsonLocationInfo.getString("id");
+                                            queryCountryWeather(HEAD_SEARCH_WEATHER + MY_API_KEY + "&location=" +
+                                                    CountryCode + TAIL_SEARCH_WEATHER);
+                                        }catch (Exception e) {
+                                            Log.e("SelectCityActivity", "COUNTRY_LEVEL query error");
+                                            e.printStackTrace();
+                                        }
+                                    }
+                                });
+
+                    }catch(Exception e) {
+                        Log.e(getLocalClassName(), "encode fail");
+                        e.printStackTrace();
+                    }
+
                     setTitleText(curCountry);
                 }
             }
@@ -108,6 +153,7 @@ public class SelectCityActivity extends Activity{
         if(null != cursor) {
             cursor.close();
         }
+
     }
 
     private void loadAllProvince() {
@@ -125,63 +171,89 @@ public class SelectCityActivity extends Activity{
 
         cursor = db.queryProvince();
         String provinceName;
-        if(null != cursor) {
-            if(cursor.moveToFirst()) {
-                do {
-                    provinceName = cursor.getString(cursor.getColumnIndex("province_name"));
-                    if(!provinceName.equals("直辖市") && !provinceName.equals("特别行政区")) {
-                        locationList.add(provinceName);
-                    }
-                }while(cursor.moveToNext());
-                listAdapter.notifyDataSetChanged();
-                list.setSelection(0);
-                return;
-            }
-            //cursor.close();
+        if(cursor.moveToFirst()) {
+            do {
+                provinceName = cursor.getString(cursor.getColumnIndex("province_name"));
+                if(!provinceName.equals("直辖市") && !provinceName.equals("特别行政区")) {
+                    locationList.add(provinceName);
+                }
+            }while(cursor.moveToNext());
+            listAdapter.notifyDataSetChanged();
+            list.setSelection(0);
+            return;
         }
+        //cursor.close();
         Log.e("SelectCityActivity", "loadAllProvince failed");
     }
 
     private void loadAllCity(String provinceName) {
         cursor = db.queryCity(provinceName);
-        if(null != cursor) {
-            if(cursor.moveToFirst()) {
-                if(0 != locationList.size()) {
-                    locationList.clear();
-                }
-                do {
-                    locationList.add(cursor.getString(cursor.getColumnIndex("city_name")));
-                }while(cursor.moveToNext());
-                listAdapter.notifyDataSetChanged();
-                list.setSelection(0);
-                return;
+        if(cursor.moveToFirst()) {
+            if(0 != locationList.size()) {
+                locationList.clear();
             }
-            //cursor.close();
+
+            do {
+                locationList.add(cursor.getString(cursor.getColumnIndex("city_name")));
+            }while(cursor.moveToNext());
+            listAdapter.notifyDataSetChanged();
+            list.setSelection(0);
+            return;
         }
+        //cursor.close();
         Log.e("SelectCityActivity", "loadAllCity failed");
     }
 
     private void loadAllCountry(String cityName) {
         cursor = db.queryCountry(cityName);
-        if (null != cursor) {
-            if (cursor.moveToFirst()) {
-                if (0 != locationList.size()) {
-                    locationList.clear();
-                }
-                do {
-                    locationList.add(cursor.getString(cursor.getColumnIndex("country_name")));
-                } while (cursor.moveToNext());
-                listAdapter.notifyDataSetChanged();
-                list.setSelection(0);
-                return;
+        if (cursor.moveToFirst()) {
+            if (0 != locationList.size()) {
+                locationList.clear();
             }
-            //cursor.close();
+
+            do {
+                locationList.add(cursor.getString(cursor.getColumnIndex("country_name")));
+            } while (cursor.moveToNext());
+            listAdapter.notifyDataSetChanged();
+            list.setSelection(0);
+            return;
         }
+        //cursor.close();
         Log.e("SelectCityActivity", "loadAllCountry failed");
     }
 
-    private void queryCountryWeather() {
-        Log.e("SelectCityActivity", "queryCountryWeather success");
+    private void queryCountryWeather(final String address) {
+        if(null != address && 0 < address.length()) {
+            HttpUtil.sendHttpRequest(address, new HttpCallbackListener() {
+                @Override
+                public void onFinish(String result) {
+                    if (null == result) {
+                        return;
+                    }
+                    LocalUtil.saveWeatherToSharedPreferences(SelectCityActivity.this, result);
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Intent intent = new Intent(SelectCityActivity.this, WeatherPageActivity.class);
+                            startActivity(intent);
+                        }
+                    });
+                }
+            });
+
+        }
+        //Log.e("SelectCityActivity", "queryCountryWeather success");
+    }
+
+    private void ShowWeatherInfo() {
+        SharedPreferences weatherInfo = getSharedPreferences("WeatherInfo", Context.MODE_PRIVATE);
+        String countryName = weatherInfo.getString("CountryName", "error");
+        String weatherStatus = weatherInfo.getString("WeatherStatus", "error");
+        String temperature = weatherInfo.getString("Temperature", "error");
+        String picCode = weatherInfo.getString("PicCode", "error");
+        String lastUpdata = weatherInfo.getString("LastUpdata", "error");
+
+
     }
 
     public void onBackPressed() {
@@ -235,4 +307,6 @@ public class SelectCityActivity extends Activity{
                 break;
         }
     }
+
+
 }

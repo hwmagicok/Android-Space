@@ -89,28 +89,26 @@ public class WeatherDataDB {
     public Cursor queryCity(final String provinceName) {
         String[] columnTmp = new String[] {"province_en"};
         Cursor cursor = db.query("Province",columnTmp, "province_name = ?", new String[] {provinceName}, null, null, null);
-        if(null != cursor) {
-            if(cursor.moveToFirst()) {
-                String provinceEn = cursor.getString(cursor.getColumnIndex("province_en"));
-                columnTmp[0] = "city_name";
-                cursor = db.query("City", columnTmp, "belong_province = ?", new String[]{provinceEn}, null, null, null);
-            }
-            //cursor.close();
+        if(cursor.moveToFirst()) {
+            String provinceEn = cursor.getString(cursor.getColumnIndex("province_en"));
+            columnTmp[0] = "city_name";
+            cursor = db.query("City", columnTmp, "belong_province = ?", new String[]{provinceEn}, null, null, null);
         }
+        //cursor.close();
+
         return cursor;
     }
 
     public Cursor queryCountry(final String cityName) {
         String[] columnTmp = new String[] {"city_en"};
         Cursor cursor = db.query("City", columnTmp, "city_name = ?", new String[] {cityName}, null, null, null);
-        if(null != cursor) {
-            if(cursor.moveToFirst()) {
-                String cityEn = cursor.getString(cursor.getColumnIndex("city_en"));
-                columnTmp[0] = "country_name";
-                cursor = db.query("Country", columnTmp, "belong_city = ?", new String[] {cityEn}, null, null, null);
-            }
-            //cursor.close();
+
+        if(cursor.moveToFirst()) {
+            String cityEn = cursor.getString(cursor.getColumnIndex("city_en"));
+            columnTmp[0] = "country_name";
+            cursor = db.query("Country", columnTmp, "belong_city = ?", new String[] {cityEn}, null, null, null);
         }
+        //cursor.close();
         return cursor;
     }
 
@@ -137,5 +135,15 @@ public class WeatherDataDB {
         return cityList;
     }
 
+    public boolean setCountryCode(final String name, final String code) {
+        if(null != name && 0 < name.length()
+                && null != code && 0 < code.length()) {
+            ContentValues content = new ContentValues();
+            content.put("country_code", code);
+            db.update("Country", content, "country_name = ?", new String[]{name});
+            return true;
+        }
+        return false;
+    }
 
 }
