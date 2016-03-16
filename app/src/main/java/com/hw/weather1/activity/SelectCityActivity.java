@@ -1,6 +1,7 @@
 package com.hw.weather1.activity;
 
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -50,6 +51,7 @@ public class SelectCityActivity extends Activity{
     private ArrayList<String> locationList;
     private ListView list;
     private TextView leveltext;
+    private ProgressDialog progressDialog;
 
     private String curProvince = null;
     private String curCity = null;
@@ -93,7 +95,7 @@ public class SelectCityActivity extends Activity{
 
                 //当发现所点击的那项属于特别地址，将直接把当前级别改为city,同时
                 //将特殊地址的标记置为1
-                if (!specialLocation.isEmpty()) {
+                if (!specialLocation.isEmpty() && COUNTRY_LEVEL != currentlevel) {
                     if (specialLocation.contains(locationList.get(position))) {
                         currentlevel = CITY_LEVEL;
                         specialLocationFlag = 1;
@@ -111,6 +113,7 @@ public class SelectCityActivity extends Activity{
                     loadAllCountry(curCity);
                     setTitleText(curCity);
                 } else if (COUNTRY_LEVEL == currentlevel) {
+                    showProgressDialog();
                     currentlevel = WEATHER_LEVEL;
                     curCountry = locationList.get(position);
 
@@ -134,6 +137,7 @@ public class SelectCityActivity extends Activity{
                                             String CountryCode = JsonLocationInfo.getString("id");
                                             queryCountryWeather(HEAD_SEARCH_WEATHER + MY_API_KEY + "&location=" +
                                                     CountryCode + TAIL_SEARCH_WEATHER);
+                                            CancleProgressDialog();
                                         }catch (Exception e) {
                                             Log.e("SelectCityActivity", "COUNTRY_LEVEL query error");
                                             e.printStackTrace();
@@ -145,7 +149,6 @@ public class SelectCityActivity extends Activity{
                         Log.e(getLocalClassName(), "encode fail");
                         e.printStackTrace();
                     }
-
                     setTitleText(curCountry);
                 }
             }
@@ -222,7 +225,7 @@ public class SelectCityActivity extends Activity{
         Log.e("SelectCityActivity", "loadAllCountry failed");
     }
 
-    private void queryCountryWeather(final String address) {
+    private synchronized void queryCountryWeather(final String address) {
         if(null != address && 0 < address.length()) {
             HttpUtil.sendHttpRequest(address, new HttpCallbackListener() {
                 @Override
@@ -308,5 +311,18 @@ public class SelectCityActivity extends Activity{
         }
     }
 
+    private void showProgressDialog() {
+        if(null == progressDialog) {
+            progressDialog = new ProgressDialog(this);
+            progressDialog.setMessage("加载中");
+            progressDialog.setCanceledOnTouchOutside(false);
+        }
+        progressDialog.show();
+    }
 
+    private void CancleProgressDialog() {
+        if(null != progressDialog) {
+            progressDialog.dismiss();
+        }
+    }
 }

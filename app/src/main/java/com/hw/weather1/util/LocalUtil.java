@@ -164,6 +164,8 @@ public class LocalUtil {
 
     public static void saveWeatherToSharedPreferences(Context context, final String JsonWeatherStr) {
         SharedPreferences.Editor editor = context.getSharedPreferences("WeatherInfo", Context.MODE_PRIVATE).edit();
+        editor.clear();
+        editor.commit();
 
         try {
             JSONObject JsonWeather = new JSONObject(JsonWeatherStr);

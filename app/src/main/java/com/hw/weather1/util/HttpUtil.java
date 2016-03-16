@@ -16,7 +16,8 @@ import javax.net.ssl.HttpsURLConnection;
  */
 public class HttpUtil {
     private static String result = null;
-    public static void sendHttpRequest(final String address, final HttpCallbackListener listener) {
+    private static StringBuffer response = null;
+    public synchronized static void sendHttpRequest(final String address, final HttpCallbackListener listener) {
         if(null != address) {
             new Thread(new Runnable() {
                 @Override
@@ -35,7 +36,12 @@ public class HttpUtil {
                         BufferedReader reader = new BufferedReader(new InputStreamReader(in, "UTF-8"));
                         Log.e("sendHttpRequest","reader after");
 
-                        StringBuffer response = new StringBuffer();
+                        if(null == response) {
+                            response = new StringBuffer();
+                        }else {
+                            response.delete(0, response.length());
+                        }
+
                         String line = null;
 
                         while((line = reader.readLine()) != null) {
@@ -47,7 +53,7 @@ public class HttpUtil {
                         }
 
                     }catch (Exception e) {
-                        Log.e("HttpUtil", "error");
+                        Log.e("HttpUtil", "error = "+ response.toString());
                         e.printStackTrace();
                     }finally {
                         if(null != connection) {
